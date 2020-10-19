@@ -343,7 +343,8 @@ static int slcan_command(void) {
 	ext = true;
 	send = true;
 	rtr = false;
-
+	ret = 0;
+	
 //	if(ring_bytes_free(&input_ring)< 100 && sw_flow) {
 //		ring_write_ch(&output_ring, XOFF);
 //		sw_flow = false;
@@ -441,7 +442,8 @@ static int slcan_command(void) {
 	if (commands_pending)
 		commands_pending--;
 
-	return 0;
+
+	return ret;
 }
 
 int main(void) {
@@ -457,7 +459,14 @@ int main(void) {
 
 	/* endless loop */
 	while (1) {
-		slcan_command();
+	  if (slcan_command()){
+	    ring_write_ch(&output_ring, '\r');
+	  }else{	  
+	    ring_write_ch(&output_ring, '\a');
+	  }
+	  /* enable the transmitter now */
+	  USART_CR1(USART2) |= USART_CR1_TXEIE;
+
 	}
 	return 0;
 }
