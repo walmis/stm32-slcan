@@ -2,3 +2,4 @@ bin/
 stm32-slcan.hex
 stm32-slcan.elf
 generated.stm32f103c8.ld
+stm32-slcan.bin
