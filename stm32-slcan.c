@@ -362,7 +362,7 @@ static int slcan_command(void)
     //	}
 
     if (!can_available_mailbox(CAN1)) {
-
+        __asm__("nop");
         return -1;
     }
 
