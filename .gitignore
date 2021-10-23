@@ -1,3 +1,4 @@
+.vscode/
 bin/
 stm32-slcan.hex
 stm32-slcan.elf
