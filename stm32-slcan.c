@@ -47,56 +47,59 @@ volatile uint8_t status;
 volatile uint8_t commands_pending;
 uint8_t d_data[8];
 
-static void gpio_setup(void) {
-	/* Enable GPIOA & GPIOB & GPIOC clock */
-	/* A2 & A3 USART */
-	rcc_periph_clock_enable(RCC_GPIOA);
-	/* B8 & B9 CAN */
-	rcc_periph_clock_enable(RCC_GPIOB);
-	/* C12 LED */
-	rcc_periph_clock_enable(RCC_GPIOC);
+static void gpio_setup(void)
+{
+    /* Enable GPIOA & GPIOB & GPIOC clock */
+    /* A2 & A3 USART */
+    rcc_periph_clock_enable(RCC_GPIOA);
+    /* B8 & B9 CAN */
+    rcc_periph_clock_enable(RCC_GPIOB);
+    /* C12 LED */
+    rcc_periph_clock_enable(RCC_GPIOC);
 
-	/* Preconfigure LED */
-	gpio_set(GPIOC, GPIO13); /* LED green off */
+    /* Preconfigure LED */
+    gpio_set(GPIOC, GPIO13); /* LED green off */
 
-	/* Preconfigure Osci pin CAN -> ASCII*/
-	gpio_clear(GPIOC, GPIO14);
+    /* Preconfigure Osci pin CAN -> ASCII*/
+    gpio_clear(GPIOC, GPIO14);
 
-	/* Preconfigure Osci pin ASCII Buffer Send */
-	gpio_clear(GPIOC, GPIO15);
+    /* Preconfigure Osci pin ASCII Buffer Send */
+    gpio_clear(GPIOC, GPIO15);
 
-	/* Configure LED&Osci GPIO */
-	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
-			GPIO13);
-	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
-			GPIO14);
-	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
-			GPIO15);
+    /* Configure LED&Osci GPIO */
+    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+        GPIO13);
+    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+        GPIO14);
+    gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL,
+        GPIO15);
 
-	/* Enable clocks for GPIO port A (for GPIO_USART2_TX) and USART2. */
-	rcc_periph_clock_enable(RCC_AFIO);
-	rcc_periph_clock_enable(RCC_USART2);
-	rcc_periph_clock_enable(RCC_DMA1);
+    /* Enable clocks for GPIO port A (for GPIO_USART2_TX) and USART2. */
+    rcc_periph_clock_enable(RCC_AFIO);
+    rcc_periph_clock_enable(RCC_USART2);
+    rcc_periph_clock_enable(RCC_DMA1);
 }
 
-static void systick_setup(void) {
-	/* 72MHz / 8 => 9000000 counts per second */
-	systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
+static void systick_setup(void)
+{
+    /* 72MHz / 8 => 9000000 counts per second */
+    systick_set_clocksource(STK_CSR_CLKSOURCE_AHB_DIV8);
 
-	/* 9000000/9000 = 1000 overflows per second - every 1ms one interrupt */
-	/* SysTick interrupt every N clock pulses: set reload to N-1 */
-	systick_set_reload(8999);
+    /* 9000000/9000 = 1000 overflows per second - every 1ms one interrupt */
+    /* SysTick interrupt every N clock pulses: set reload to N-1 */
+    systick_set_reload(8999);
 
-	systick_interrupt_enable();
+    systick_interrupt_enable();
 
-	/* Start counting */
-	systick_counter_enable();
+    /* Start counting */
+    systick_counter_enable();
 }
 
-static int can_speed(int index) {
-	int ret;
+static int can_speed(int index)
+{
+    int ret;
 
-	/*
+    /*
 	 S0 = 10 kBaud
 	 S1 = 20 kBaud
 	 S2 = 50 kBaud
@@ -124,349 +127,349 @@ static int can_speed(int index) {
 	 RFLM: Receive FIFO locked mode
 	 TXFP: Transmit FIFO priority
 	 */
-	switch (index) {
-	case 0:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_14TQ, CAN_BTR_TS2_5TQ, 180, false,
-				false);
-		break;
-	case 1:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_14TQ, CAN_BTR_TS2_5TQ, 90, false,
-				false);
-		break;
-	case 2:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_14TQ, CAN_BTR_TS2_5TQ, 36, false,
-				false);
-		break;
-	case 3:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_8TQ, CAN_BTR_TS2_2TQ, 36, false,
-				false);
-		break;
-	case 4:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_13TQ, CAN_BTR_TS2_2TQ, 18, false,
-				false);
-		break;
-	case 5:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_13TQ, CAN_BTR_TS2_2TQ, 9, false,
-				false);
-		break;
-	case 6:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_7TQ, CAN_BTR_TS2_1TQ, 9, false,
-				false);
-		break;
-	case 7:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_12TQ, CAN_BTR_TS2_2TQ, 3, false,
-				false);
-		break;
-	case 8:
-		ret = can_init(CAN1, false, true, false, false, false, false,
-				CAN_BTR_SJW_1TQ, CAN_BTR_TS1_15TQ, CAN_BTR_TS2_2TQ, 2, false,
-				false);
-		break;
-	default:
-		ret = -1;
-		break;
-	}
-	return ret;
+    switch (index) {
+    case 0:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_14TQ, CAN_BTR_TS2_5TQ, 180, false,
+            false);
+        break;
+    case 1:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_14TQ, CAN_BTR_TS2_5TQ, 90, false,
+            false);
+        break;
+    case 2:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_14TQ, CAN_BTR_TS2_5TQ, 36, false,
+            false);
+        break;
+    case 3:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_8TQ, CAN_BTR_TS2_2TQ, 36, false,
+            false);
+        break;
+    case 4:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_13TQ, CAN_BTR_TS2_2TQ, 18, false,
+            false);
+        break;
+    case 5:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_13TQ, CAN_BTR_TS2_2TQ, 9, false,
+            false);
+        break;
+    case 6:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_7TQ, CAN_BTR_TS2_1TQ, 9, false,
+            false);
+        break;
+    case 7:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_12TQ, CAN_BTR_TS2_2TQ, 3, false,
+            false);
+        break;
+    case 8:
+        ret = can_init(CAN1, false, true, false, false, false, false,
+            CAN_BTR_SJW_1TQ, CAN_BTR_TS1_15TQ, CAN_BTR_TS2_2TQ, 2, false,
+            false);
+        break;
+    default:
+        ret = -1;
+        break;
+    }
+    return ret;
 }
 
-static void can_setup(void) {
-	/* Enable peripheral clocks */
-	rcc_periph_clock_enable(RCC_AFIO);
-	rcc_periph_clock_enable(RCC_CAN1);
+static void can_setup(void)
+{
+    /* Enable peripheral clocks */
+    rcc_periph_clock_enable(RCC_AFIO);
+    rcc_periph_clock_enable(RCC_CAN1);
 
-	AFIO_MAPR |= AFIO_MAPR_CAN1_REMAP_PORTB;
+    AFIO_MAPR |= AFIO_MAPR_CAN1_REMAP_PORTB;
 
-	/* Configure CAN pin: RX (input pull-up) */
-	gpio_set_mode(GPIO_BANK_CAN1_PB_RX, GPIO_MODE_INPUT,
-			GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_CAN1_PB_RX);
-	gpio_set(GPIO_BANK_CAN1_PB_RX, GPIO_CAN1_PB_RX);
+    /* Configure CAN pin: RX (input pull-up) */
+    gpio_set_mode(GPIO_BANK_CAN1_PB_RX, GPIO_MODE_INPUT,
+        GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_CAN1_PB_RX);
+    gpio_set(GPIO_BANK_CAN1_PB_RX, GPIO_CAN1_PB_RX);
 
-	/* Configure CAN pin: TX */
-	gpio_set_mode(GPIO_BANK_CAN1_PB_TX, GPIO_MODE_OUTPUT_50_MHZ,
-			GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_CAN1_PB_TX);
+    /* Configure CAN pin: TX */
+    gpio_set_mode(GPIO_BANK_CAN1_PB_TX, GPIO_MODE_OUTPUT_50_MHZ,
+        GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_CAN1_PB_TX);
 
-	/* NVIC setup */
-	nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);
-	nvic_set_priority(NVIC_USB_LP_CAN_RX0_IRQ, 1);
+    /* NVIC setup */
+    nvic_enable_irq(NVIC_USB_LP_CAN_RX0_IRQ);
+    nvic_set_priority(NVIC_USB_LP_CAN_RX0_IRQ, 1);
 
-	/* Reset CAN */
-	can_reset(CAN1);
+    /* Reset CAN */
+    can_reset(CAN1);
 
-	/* defaultt CAN setting 250 kBaud */
-	if (can_speed(5)) {
-		gpio_clear(GPIOC, GPIO13); /* LED green on */
+    /* defaultt CAN setting 250 kBaud */
+    if (can_speed(5)) {
+        gpio_clear(GPIOC, GPIO13); /* LED green on */
 
-		/* Die because we failed to initialize. */
-		while (1)
-			__asm__("nop");
-	}
+        /* Die because we failed to initialize. */
+        while (1)
+            __asm__("nop");
+    }
 
-	/* CAN filter 0 init. */
-	can_filter_id_mask_32bit_init(0, 0, /* CAN ID */
-	0, /* CAN ID mask */
-	0, /* FIFO assignment (here: FIFO0) */
-	true); /* Enable the filter. */
+    /* CAN filter 0 init. */
+    can_filter_id_mask_32bit_init(0, 0, /* CAN ID */
+        0, /* CAN ID mask */
+        0, /* FIFO assignment (here: FIFO0) */
+        true); /* Enable the filter. */
 
-	/* Enable CAN RX interrupt. */
-	can_enable_irq(CAN1, CAN_IER_FMPIE0);
+    /* Enable CAN RX interrupt. */
+    can_enable_irq(CAN1, CAN_IER_FMPIE0);
 }
 
-void sys_tick_handler(void) {
+void sys_tick_handler(void)
+{
 
-	/* We call this handler every 1ms so every 1ms = 0.001s
+    /* We call this handler every 1ms so every 1ms = 0.001s
 	 * resulting in 1Hz message rate.
 	 */
 
-	/* Transmit CAN frame. */
-	counter++;
-	if (counter == 500) {
-		counter = 0;
-		gpio_toggle(GPIOC, GPIO13); /* toggle green LED */
-	}
+    /* Transmit CAN frame. */
+    counter++;
+    if (counter == 500) {
+        counter = 0;
+        gpio_toggle(GPIOC, GPIO13); /* toggle green LED */
+    }
 }
 
-static void gpio_debug(int n) {
+// static void gpio_debug(int n)
+// {
+//     switch (n) {
+//     case 0:
+//         gpio_clear(GPIOC, GPIO14);
+//         gpio_clear(GPIOC, GPIO15);
+//         break;
+//     case 1:
+//         gpio_set(GPIOC, GPIO14);
+//         gpio_clear(GPIOC, GPIO15);
+//         break;
+//     case 2:
+//         gpio_clear(GPIOC, GPIO14);
+//         gpio_set(GPIOC, GPIO15);
+//         break;
+//     case -1:
+//         gpio_set(GPIOC, GPIO14);
+//         gpio_set(GPIOC, GPIO15);
+//         break;
+//     }
+// }
 
-	switch (n) {
-	case 0:
-		gpio_clear(GPIOC, GPIO14);
-		gpio_clear(GPIOC, GPIO15);
-		break;
-	case 1:
-		gpio_set(GPIOC, GPIO14);
-		gpio_clear(GPIOC, GPIO15);
-		break;
-	case 2:
-		gpio_clear(GPIOC, GPIO14);
-		gpio_set(GPIOC, GPIO15);
-		break;
-	case -1:
-		gpio_set(GPIOC, GPIO14);
-		gpio_set(GPIOC, GPIO15);
-		break;
-	}
+static void put_hex(uint8_t c)
+{
+    uint8_t s[2];
+
+    bin2hex(s, c);
+    ring_write(&output_ring, s, 2);
 }
 
-static void put_hex(uint8_t c) {
-	uint8_t s[2];
+void usb_lp_can_rx0_isr(void)
+{
+    uint32_t id;
+    bool ext, rtr;
+    uint8_t i, dlc, data[8], fmi;
+    char c;
 
-	bin2hex(s, c);
-	ring_write(&output_ring, s, 2);
+    can_receive(CAN1, 0, false, &id, &ext, &rtr, &fmi, &dlc, data, NULL);
+
+    if (rtr) {
+        if (ext)
+            c = 'R';
+        else
+            c = 'r';
+    } else {
+        if (ext)
+            c = 'T';
+        else
+            c = 't';
+    }
+    ring_write_ch(&output_ring, c);
+    if (ext) {
+        c = (id >> 24) & 0xff;
+        put_hex(c);
+        c = (id >> 16) & 0xff;
+        put_hex(c);
+        c = (id >> 8) & 0xff;
+        put_hex(c);
+        c = id & 0xff;
+        put_hex(c);
+    } else {
+        /* bits 11-9 */
+        c = (id >> 8) & 0x07;
+        c += 0x30;
+        ring_write_ch(&output_ring, c);
+        /* bits 8-1 */
+        c = id & 0xff;
+        put_hex(c);
+    }
+    c = (dlc & 0x0f) | 0x30;
+    ring_write_ch(&output_ring, c);
+    for (i = 0; i < dlc; i++)
+        put_hex(data[i]);
+
+    ring_write_ch(&output_ring, '\r');
+
+    can_fifo_release(CAN1, 0);
+
+    /* enable the transmitter now */
+    USART_CR1(USART2) |= USART_CR1_TXEIE;
 }
 
-void usb_lp_can_rx0_isr(void) {
-	uint32_t id;
-	bool ext, rtr;
-	uint8_t i, dlc, data[8], fmi;
-	char c;
+static uint32_t get_nibbles(int nibbles)
+{
+    int i;
+    uint32_t id;
+    char c;
 
-	can_receive(CAN1, 0, false, &id, &ext, &rtr, &fmi, &dlc, data, NULL);
-
-	if (rtr) {
-		if (ext)
-			c = 'R';
-		else
-			c = 'r';
-	} else {
-		if (ext)
-			c = 'T';
-		else
-			c = 't';
-	}
-	ring_write_ch(&output_ring, c);
-	if (ext) {
-		c = (id >> 24) & 0xff;
-		put_hex(c);
-		c = (id >> 16) & 0xff;
-		put_hex(c);
-		c = (id >> 8) & 0xff;
-		put_hex(c);
-		c = id & 0xff;
-		put_hex(c);
-	} else {
-		/* bits 11-9 */
-		c = (id >> 8) & 0x07;
-		c += 0x30;
-		ring_write_ch(&output_ring, c);
-		/* bits 8-1 */
-		c = id & 0xff;
-		put_hex(c);
-	}
-	c = (dlc & 0x0f) | 0x30;
-	ring_write_ch(&output_ring, c);
-	for (i = 0; i < dlc; i++)
-		put_hex(data[i]);
-
-	ring_write_ch(&output_ring, '\r');
-
-	can_fifo_release(CAN1, 0);
-
-	/* enable the transmitter now */
-	USART_CR1(USART2) |= USART_CR1_TXEIE;
+    id = 0;
+    for (i = 0; i < nibbles; i++) {
+        c = uart_read_blocking();
+        id <<= 4;
+        id |= nibble2bin(c);
+    }
+    return id;
 }
 
-static uint32_t get_nibbles(int nibbles) {
-	int i;
-	uint32_t id;
-	char c;
+static int slcan_command(void)
+{
+    static bool sw_flow = true;
+    bool ext, rtr;
+    uint8_t i, dlc, data[8];
+    uint32_t id;
+    int32_t ret;
+    char c;
+    bool send;
 
-	id = 0;
-	for (i = 0; i < nibbles; i++) {
-		c = uart_read_blocking();
-		id <<= 4;
-		id |= nibble2bin(c);
-	}
-	return id;
-}
+    id = 0;
+    dlc = 0;
+    ext = true;
+    send = true;
+    rtr = false;
+    ret = 0;
 
+    //	if(ring_bytes_free(&input_ring)< 100 && sw_flow) {
+    //		ring_write_ch(&output_ring, XOFF);
+    //		sw_flow = false;
+    //	}
+    //	if(ring_bytes_free(&input_ring)> 500 && !sw_flow) {
+    //		ring_write_ch(&output_ring, XON);
+    //		sw_flow = true;
+    //	}
 
+    if (!can_available_mailbox(CAN1)) {
+        __asm__("nop");
+        return -1;
+    }
 
-static int slcan_command(void) {
-	static bool sw_flow = true;
-	bool ext, rtr;
-	uint8_t i, dlc, data[8];
-	uint32_t id;
-	int32_t ret ;
-	char c;
-	bool send;
+    c = uart_read_blocking();
+    switch (c) {
+    case 'T':
+        id = get_nibbles(8);
+        dlc = get_nibbles(1);
+        break;
+    case 't':
+        ext = false;
+        id = get_nibbles(3);
+        dlc = get_nibbles(1);
+        break;
+    case 'R':
+        rtr = true;
+        ext = true;
+        id = get_nibbles(8);
+        dlc = get_nibbles(1);
+        break;
+    case 'r':
+        rtr = true;
+        ext = false;
+        id = get_nibbles(3);
+        dlc = get_nibbles(1);
+        break;
+    case 'S':
+        c = get_nibbles(1);
+        can_speed(c);
+        send = false;
+        break;
+    case 'v':
+        send = false;
+        break;
+    case 'V':
+        send = false;
+        break;
+    case 'C':
+        send = false;
+        break;
+    default:
+        send = false;
+        break;
+    }
+    if (dlc > 8) {
+        /* consume chars until eol reached */
+        do {
+            ret = uart_read_blocking();
+        } while (ret != '\r');
+        return -1;
+    }
 
-	id = 0;
-	dlc = 0;
-	ext = true;
-	send = true;
-	rtr = false;
-	ret = 0;
-	
-//	if(ring_bytes_free(&input_ring)< 100 && sw_flow) {
-//		ring_write_ch(&output_ring, XOFF);
-//		sw_flow = false;
-//	}
-//	if(ring_bytes_free(&input_ring)> 500 && !sw_flow) {
-//		ring_write_ch(&output_ring, XON);
-//		sw_flow = true;
-//	}
+    for (i = 0; i < dlc; i++) {
+        data[i] = (uint8_t)get_nibbles(2);
+    }
 
-
-	if (!can_available_mailbox(CAN1)) {
-		asm("nop");
-		return -1;
-	}
-
-
-	c = uart_read_blocking();
-	switch (c) {
-	case 'T':
-		id = get_nibbles(8);
-		dlc = get_nibbles(1);
-		break;
-	case 't':
-		ext = false;
-		id = get_nibbles(3);
-		dlc = get_nibbles(1);
-		break;
-	case 'R':
-		rtr = true;
-		ext = true;
-		id = get_nibbles(8);
-		dlc = get_nibbles(1);
-		break;
-	case 'r':
-		rtr = true;
-		ext = false;
-		id = get_nibbles(3);
-		dlc = get_nibbles(1);
-		break;
-	case 'S':
-		c = get_nibbles(1);
-		can_speed(c);
-		send = false;
-		break;
-	case 'v':
-		send = false;
-		break;
-	case 'V':
-		send = false;
-		break;
-	case 'C':
-		send = false;
-		break;
-	default:
-		send = false;
-		break;
-	}
-	if(dlc > 8) {
-		/* consume chars until eol reached */
-		do {
-			ret = uart_read_blocking();
-		} while (ret != '\r');
-		return -1;
-	}
-
-
-	for (i = 0; i < dlc; i++) {
-		data[i] = (uint8_t) get_nibbles(2);
-	}
-
-	/* consume chars until eol reached */
-	do {
-		ret = uart_read_blocking();
-	} while (ret != '\r');
+    /* consume chars until eol reached */
+    do {
+        ret = uart_read_blocking();
+    } while (ret != '\r');
 
 #if 1
-	if (send) {
-		ret = can_transmit(CAN1, id, ext, rtr, dlc, data);
-		/* gpio_debug(ret); */
-	}
+    if (send) {
+        ret = can_transmit(CAN1, id, ext, rtr, dlc, data);
+        /* gpio_debug(ret); */
+    }
 #else
-	if (send) {
-		int loop = CAN_MAX_RETRY;
-		/* try to send data - omit if not possible */
-		while(loop-- > 0) {
-			if (can_available_mailbox(CAN1))
-			break;
-			/* TODO: LED overflow */
-		}
-		ret = can_transmit(CAN1, id, ext, rtr, dlc, data);
-		gpio_debug(ret);
-	}
+    if (send) {
+        int loop = CAN_MAX_RETRY;
+        /* try to send data - omit if not possible */
+        while (loop-- > 0) {
+            if (can_available_mailbox(CAN1))
+                break;
+            /* TODO: LED overflow */
+        }
+        ret = can_transmit(CAN1, id, ext, rtr, dlc, data);
+        gpio_debug(ret);
+    }
 #endif
 
-	if (commands_pending)
-		commands_pending--;
+    if (commands_pending)
+        commands_pending--;
 
-
-	return ret;
+    return ret;
 }
 
-int main(void) {
-	status = 0;
-	commands_pending = 0;
+int main(void)
+{
+    status = 0;
+    commands_pending = 0;
 
-	rcc_clock_setup_in_hse_8mhz_out_72mhz();
-	gpio_setup();
-	can_setup();
-	usart_setup();
+    rcc_clock_setup_pll(&rcc_hse_configs[RCC_CLOCK_HSE8_72MHZ]);
+    gpio_setup();
+    can_setup();
+    usart_setup();
 
-	systick_setup();
+    systick_setup();
 
-	/* endless loop */
-	while (1) {
-	  if (slcan_command()){
-	    ring_write_ch(&output_ring, '\r');
-	  }else{	  
-	    ring_write_ch(&output_ring, '\a');
-	  }
-	  /* enable the transmitter now */
-	  USART_CR1(USART2) |= USART_CR1_TXEIE;
-
-	}
-	return 0;
+    /* endless loop */
+    while (1) {
+        if (slcan_command()) {
+            ring_write_ch(&output_ring, '\r');
+        } else {
+            ring_write_ch(&output_ring, '\a');
+        }
+        /* enable the transmitter now */
+        USART_CR1(USART2) |= USART_CR1_TXEIE;
+    }
+    return 0;
 }

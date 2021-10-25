@@ -17,28 +17,21 @@
 ## along with this library.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-# PREFIX = /embedded/arm-cortex/gcc-arm-none-eabi-4_9-2015q1/bin/arm-none-eabi
-#PREFIX = /embedded/arm-cortex/gcc-arm-none-eabi-5_2-2015q4/bin/arm-none-eabi
-# OPENCM3_DIR = /usr/local/Cellar/arm-lib/libopencm3
-OPENCM3_DIR = /home/walmis/Programming/libopencm3
+PROJECT = stm32-slcan
+BUILD_DIR = bin
 
-TTYISP = /dev/ttyUSB1
 
-OBJS = usart.o utils.o
-BINARY = stm32-slcan
+CFILES = usart.c utils.c stm32-slcan.c
 
-LDSCRIPT = STM32F103C8.ld
 
-include mk/Makefile.include
+DEVICE=stm32f103c8
+# OOCD_FILE = board/stm32f4discovery.cfg
 
-st-flash:$(BINARY).stlink-flash
+# You shouldn't have to edit anything below here.
+VPATH += $(SHARED_DIR)
+INCLUDES += $(patsubst %,-I%, . $(SHARED_DIR))
+OPENCM3_DIR=./libopencm3
 
-stm32flash:$(BINARY).bin
-	@printf "  FLASH  $<\n"
-	stm32flash -w $< -b 57600 -v -g 0 $(TTYISP)
-
-backup:
-	stm32flash -r $(BINARY)_s.bin -b 57600 $(TTYISP)
-
-distclean:clean
-	find . -name "*~" -delete
+include $(OPENCM3_DIR)/mk/genlink-config.mk
+include ./mk/rules.mk
+include $(OPENCM3_DIR)/mk/genlink-rules.mk
